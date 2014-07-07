@@ -72,7 +72,7 @@
 							$slide = $wrap.find(opt.slide),
 							slidenum = $slide.length,
 							transition = 'margin-left ' + (opt.speed / 1000) + 's ease',
-							tmp = 'carousel-' + inst + '-' + carInt,
+							tmp = opt.namespace + '-' + inst + '-' + carInt,
 							start = opt.startSlide < 1 ? 1 : opt.startSlide > slidenum ? slidenum : parseInt(opt.startSlide);
 						
 						if ($slide.length <= 1) {
@@ -87,7 +87,7 @@
 							.attr('role' , 'application');
 						
 						$slider
-							.attr('id', ($slider[0].id || 'carousel-' + inst + '-' + carInt))
+							.attr('id', ($slider[0].id || opt.namespace + '-' + inst + '-' + carInt))
 							.css({
 								'marginLeft' : -(100 * (start - 1)) + '%',
 								'float' : 'left',
@@ -180,7 +180,7 @@
 							$pagination = $('<ol class="' + opt.namespace + '-tabs" role="tablist navigation" />'),
 							$slides = $oEl.find(opt.slide),
 							slideNum = $slides.length,
-							associated = 'carousel-' + inst + '-' + i;
+							associated = opt.namespace + '-' + inst + '-' + i;
 						
 						while (slideNum--) {
 							var hed = $slides.eq(slideNum).find(opt.slideHed).text() || 'Page ' + (slideNum + 1),
