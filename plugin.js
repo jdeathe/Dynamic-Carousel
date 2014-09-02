@@ -48,9 +48,10 @@
 				slide : '.slide',
 				prevSlide : null,
 				nextSlide : null,
+				pauseSlide : null,
 				slideHed : null,
 				addPagination : false,
-				addNav : (config != undefined && (config.prevSlide || config.nextSlide)) ? false : true,
+				addNav : (config !== undefined && (config.prevSlide || config.nextSlide || config.pauseSlide)) ? false : true,
 				namespace : 'carousel',
 				speed : 300,
 				rotate : false,
@@ -101,7 +102,8 @@
 							.bind('carouselmove', carousel.move)
 							.bind('nextprev', carousel.nextPrev)
 							.bind('navstate', carousel.navState)
-							.bind('loadimages', carousel.loadImages);
+							.bind('loadimages', carousel.loadImages)
+							.bind('pauseToggle', carousel.pauseToggle);
 						
 						$slide
 							.css({
@@ -158,16 +160,24 @@
 							slidenum = $slide.length,
 							start = opt.startSlide < 1 ? 1 : opt.startSlide > slidenum ? slidenum : parseInt(opt.startSlide),
 							currentSlider = $slider[start - 1].id,
+							pauseMarkup = (opt.pauseSlide ? '	<li role="presentation"><a href="#' + currentSlider + '" class="' + opt.namespace + '-pause">Pause</a></li>' : ''),
 							navMarkup = [
 								'<ul class="slidecontrols" role="navigation">',
 								'	<li role="presentation"><a href="#' + currentSlider + '" class="' + opt.namespace + '-next">Next</a></li>',
 								'	<li role="presentation"><a href="#' + currentSlider + '" class="' + opt.namespace + '-prev">Prev</a></li>',
+								pauseMarkup,
 								'</ul>'
 								].join(''),
 							nextprev = {
 								nextSlide : '.' + opt.namespace + '-next',
 								prevSlide : '.' + opt.namespace + '-prev'
 							};
+						
+						if (opt.pauseSlide) {
+							$.extend(nextprev, {
+								pauseSlide : '.' + opt.namespace + '-pause'
+							});
+						}
 						
 						opt = $.extend(opt, nextprev);
 						
@@ -350,10 +360,33 @@
 						
 						$el.trigger('carouselmove', { moveTo: reset });
 					}
+				},
+				pauseToggle: function (e, ui) {
+					var $el = $(this),
+						paused = $el.data(opt.namespace + '-paused');
+					
+					paused = !paused;
+					
+					$el.data(opt.namespace + '-paused', paused);
+					
+					if (paused) {
+						console.log('pausing...');
+						$(opt.pauseSlide).addClass(opt.namespace + '-paused');
+					} 
+					else {
+						console.log('restarting...');
+						$(opt.pauseSlide).removeClass(opt.namespace + '-paused');
+					}
 				}
 			};
 		
 		carousel.init(this);
+		
+		if (opt.pauseSlide) {
+			$(opt.pauseSlide)
+				.addClass(opt.namespace + '-disabled')
+				.attr('aria-disabled', true);
+		}
 		
 		$(opt.nextSlide + ',' + opt.prevSlide)
 			.bind('click', function (e) {
@@ -442,16 +475,34 @@
 			
 			auto = setInterval(autoAdvance, 0);
 			
+			if (opt.pauseSlide) {
+				$(opt.pauseSlide).bind('click', function (e) {
+					var $el = $(this),
+						link = this.hash,
+						$slider = $(link);
+					
+					if ($el.is('.' + opt.namespace + '-disabled')) {
+						return false;
+					}
+					
+					$slider.trigger('pauseToggle');
+					
+					e.preventDefault();
+				}).removeClass(opt.namespace + '-disabled').removeAttr('aria-disabled');
+			}
+			
 			$el
 				.attr('aria-live', 'polite')
-				.bind('mouseenter click touchstart', function () {
+				.bind('mouseenter click touchstart', function (e) {
 					clearInterval(auto);
 				});
 			
 			$el
 				.attr('aria-live', 'polite')
 				.bind('mouseleave', function () {
-					auto = setInterval(autoAdvance, speed);
+					if (!$slider.data(opt.namespace + '-paused')) {
+						auto = setInterval(autoAdvance, speed);
+					}
 				});
 		});
 		
