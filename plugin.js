@@ -453,6 +453,11 @@
 				.bind('mouseleave', function () {
 					auto = setInterval(autoAdvance, speed);
 				});
+			
+			$(opt.nextSlide + ',' + opt.prevSlide)
+				.bind('mouseenter click', function () {
+					clearInterval(auto);
+				});
 		});
 		
 		return this;
